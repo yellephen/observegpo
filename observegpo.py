@@ -2,6 +2,19 @@ import asyncio
 from msldap.commons.factory import LDAPConnectionFactory
 import argparse
 
+def is_user_in_ou(user_dn, ou_dn):
+    user_dn_parts = user_dn.split(',')
+    ou_dn_parts = ou_dn.split(',')
+
+    if len(user_dn_parts) < len(ou_dn_parts):
+        return False
+
+    for i in range(len(ou_dn_parts)):
+        if user_dn_parts[-i-1].lower() != ou_dn_parts[-i-1].lower():
+            return False
+
+    return True
+
 async def client(url,query,attributes):
     conn_url = LDAPConnectionFactory.from_url(url)
     ldap_client = conn_url.get_client()
@@ -68,7 +81,8 @@ async def main():
             whenCreated = gpos[backtrackindex]["attributes"]["whenCreated"]
             print(f"[x] Policy created at: {whenCreated}")
             print("[x] linked ou: " + ou["attributes"]["distinguishedName"])
-            
+            if is_user_in_ou(userDN,ou["attributes"]["distinguishedName"]):
+                print("[x] user in this ou or a decendant")
             
             
         backtrackindex += 1
