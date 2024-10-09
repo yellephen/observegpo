@@ -65,21 +65,22 @@ def ProcessSysVol(path, username, password):
 
 async def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--constring', default="", help="The msldap connection string.")
-    parser.add_argument('-q', '--queryuser', default="", help="Repeat the sAMAccountName of the user running the query.")
-    parser.add_argument('-t','--dcip',help="IP of a DC holding the SYSVOL to inspect.")
-    parser.add_argument('-u','--authuser',help="Username to connect to SYSVOL with")
-    parser.add_argument('-p','--authpassword',help="Password to connect to SYSVOL with")
+    parser.add_argument('-c', '--constring', default="", required=True, help="The msldap connection string.")
+    parser.add_argument('-q', '--queryuser', default="", help="Will notify if this sAMAccountName is affected by each policy.")
+    parser.add_argument('-t','--dcip', required=True, help="IP of a DC holding the SYSVOL to inspect.")
+    parser.add_argument('-u','--smbuser', required=True, help="Username to connect to SYSVOL with")
+    parser.add_argument('-p','--smbpassword', required=True, help="Password to connect to SYSVOL with")
     
     args = parser.parse_args()
     
-    query = f"(sAMAccountName={args.queryuser})"
-    currentuser = await client(args.constring, query,["distinguishedName"])
+    if args.queryuser != '':
+        query = f"(sAMAccountName={args.queryuser})"
+        currentuser = await client(args.constring, query,["distinguishedName"])
 
-    #print(currentuser)
-    userDN = currentuser[0]["attributes"]["distinguishedName"]
-    print(f"Current user: {userDN}")
-    print("")
+        #print(currentuser)
+        userDN = currentuser[0]["attributes"]["distinguishedName"]
+        print(f"Current user: {userDN}")
+        print("")
 
     query = "(objectclass=groupPolicyContainer)"
     gpos = await client(args.constring, query,["name","displayname","gpcfilesyspath","whenCreated"])
@@ -102,15 +103,16 @@ async def main():
             print("[ ] No linked ous")
         for ou in ou_results:
             print("[x] linked ou: " + ou["attributes"]["distinguishedName"])
-            if is_user_in_ou(userDN,ou["attributes"]["distinguishedName"]):
-                print("[x] user in this ou or a decendant")
+            if args.queryuser != '':
+                if is_user_in_ou(userDN,ou["attributes"]["distinguishedName"]):
+                    print("[x] user in this ou or a decendant")
         
         parts = path.split('\\')
         parts[2] = args.dcip
         ippath = '\\'.join(parts)
 
         
-        ProcessSysVol(ippath,args.authuser,args.authpassword)
+        ProcessSysVol(ippath,args.smbuser,args.smbpassword)
     
 if __name__ == "__main__":
     asyncio.run(main())
