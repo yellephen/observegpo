@@ -5,6 +5,7 @@ import os
 from smbclient import listdir
 from smbclient.path import isdir
 import smbclient
+import registrypol
 
 def list_files_recursively(directory, username, password):
     files = []
@@ -60,9 +61,16 @@ def ProcessSysVol(path, username, password):
         print("[x] Paths to files in SYSVOL")
         for file in files:
             print(file)
-
-#$searcher.Filter = "(&(objectCategory=organizationalUnit)(gplink=*$($name)*))"
-
+            with smbclient.open_file(file, 'rb') as fd:
+                if fd.writable:
+                    print("     [x] The above file is writable by the smbuser passed.")
+                if file.split(".")[-1] == "pol":
+                    # Iterate over each registry value and print its details
+                    print("Policy file found, dumping kvps.")
+                    policy_data = registrypol.load(fd)
+                    for value in policy_data.values:
+                        print(f"Key: {value.key} Value Name: {value.value} Type: {value.type} Data: {value.data}")
+                
 async def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--constring', default="", required=True, help="The msldap connection string.")
