@@ -69,11 +69,40 @@ def ProcessSysVol(path, username, password):
                     print("Policy file found, dumping kvps.")
                     policy_data = registrypol.load(fd)
                     for value in policy_data.values:
-                        print(f"Key: {value.key} Value Name: {value.value} Type: {value.type} Data: {value.data}")
+                        if value.type == 0:
+                            data = value.data
+                            print(f"Key:{value.key}\{value.value} Value:{data} Type:REG_NONE")
+                        elif value.type == 1:
+                            data = value.data
+                            print(f"Key:{value.key}\{value.value} Value:{data} Type:REG_SZ")
+                        elif value.type == 2:
+                            data = value.data
+                            print(f"Key:{value.key}\{value.value} Value:{data} Type:REG_EXPAND_SZ")
+                        elif value.type == 3:
+                            data = value.data
+                            print(f"Key:{value.key}\{value.value} Value:{data} Type:REG_BINARY")
+                        elif value.type == 4:
+                            data = int.from_bytes(value.data,'little')
+                            print(f"Key:{value.key}\{value.value} Value:{data} Type:REG_DWORD")        
+                        elif value.type == 5:
+                            data = value.data
+                            print(f"Key:{value.key}\{value.value} Value:{data} Type:REG_DWORD_BIG_ENDIAN")   
+                        elif value.type == 6:
+                            data = value.data
+                            print(f"Key:{value.key}\{value.value} Value:{data} Type:REG_LINK")   
+                        elif value.type == 7:
+                            data = value.data
+                            print(f"Key:{value.key}\{value.value} Value:{data} Type:REG_MULTI_SZ")   
+                        elif value.type == 8:
+                            data = value.data
+                            print(f"Key:{value.key}\{value.value} Value:{data} Type:REG_RESOURCE_LIST")   
+                        elif value.type == 11:
+                            data = value.data
+                            print(f"Key:{value.key}\{value.value} Value:{data} Type:REG_QWORD")                                                                                                                                                                                                                   
                 
 async def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--constring', default="", required=True, help="The msldap connection string.")
+    parser.add_argument('-c', '--constring', default="", required=True, help="The msldap connection string. eg. ldap+ntlm-password://TEST\\victim:<password>@10.10.10.2")
     parser.add_argument('-q', '--queryuser', default="", help="Will notify if this sAMAccountName is affected by each policy.")
     parser.add_argument('-t','--dcip', required=True, help="IP of a DC holding the SYSVOL to inspect.")
     parser.add_argument('-u','--smbuser', required=True, help="Username to connect to SYSVOL with")
