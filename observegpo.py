@@ -139,7 +139,8 @@ async def main():
         print("")
 
     query = "(objectclass=groupPolicyContainer)"
-    gpos = await client(args.constring, query,["name","displayname","gpcfilesyspath","whenCreated","distinguishedName"])
+    #Get nTSecurityDescriptor for users/groups assigned a GPO in ways other than OU
+    gpos = await client(args.constring, query,["name","displayname","gpcfilesyspath","whenCreated","distinguishedName","nTSecurityDescriptor"])
     #print(f"GPOs found:{len(gpos)}")
 
    
@@ -162,7 +163,10 @@ async def main():
             if args.queryuser != '':
                 if is_user_in_ou(userDN,ou["attributes"]["distinguishedName"]):
                     print("[x] user in this ou or a decendant")
-        
+        #maybe drop into pwsh to decode the SDDL or another way but it pulls out as bytes.
+        #if it was run on windows it could just use an API
+
+
         parts = path.split('\\')
         parts[2] = args.dcip
         ippath = '\\'.join(parts)
